@@ -16,12 +16,12 @@ window.addEventListener("resize", resize);
 resize();
 
 // --- tunable mechanics ---
-const GRAVITY = 0.5;
-const FLAP = -8.5;
-const SCROLL = 3.2;      // pipe speed (px/frame)
-const GAP = 190;         // vertical gap size
+const GRAVITY = 0.38;
+const FLAP = -7.8;
+const SCROLL = 2.3;      // pipe speed (px/frame)
+const GAP = 270;         // vertical gap size
 const PIPE_W = 70;
-const PIPE_SPACING = 300; // horizontal distance between pipes
+const PIPE_SPACING = 400; // horizontal distance between pipes
 const BIRD_X = 140;
 const BIRD_R = 20;
 
