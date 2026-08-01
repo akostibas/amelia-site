@@ -24,6 +24,7 @@ const CAR_H = 40;
 const OB_W = 70;
 const OB_H = 44;
 const OB_SPACING = 340;   // gap between oncoming cars
+const CAR_COLORS = ["#e2483b", "#f39c12", "#9b59b6", "#e84393", "#16a085", "#2980ff", "#e67e22"];
 const AMBU_SPEED = 13;    // ambulance zoom speed (faster than traffic)
 const AMBU_W = 96;
 const AMBU_H = 48;
@@ -100,7 +101,10 @@ function reset() {
 function addObstacle(x) {
   const margin = 40;
   const y = margin + Math.random() * (H - OB_H - margin * 2);
-  obstacles.push({ x, y, passed: false });
+  // each car drives forward at its own pace, always slower than us
+  const speed = SCROLL * (0.3 + Math.random() * 0.55);
+  const color = CAR_COLORS[Math.floor(Math.random() * CAR_COLORS.length)];
+  obstacles.push({ x, y, passed: false, speed, color });
 }
 
 function start() {
@@ -165,7 +169,7 @@ function update() {
   // move cars: normal cars scroll left; knocked cars fly along their velocity
   for (const o of obstacles) {
     if (o.hit) { o.x += o.vx; o.y += o.vy; o.spin += o.dspin; }
-    else o.x -= SCROLL;
+    else o.x -= (SCROLL - o.speed);   // they move forward, but slower than us
   }
   // spawn based on the rightmost normal (non-knocked) car
   let lastX = -Infinity;
@@ -223,7 +227,7 @@ function draw() {
   ctx.fillRect(0, 0, W, 6);
   ctx.fillRect(0, H - 6, W, 6);
 
-  for (const o of obstacles) drawCar(o.x, o.y, "#e2483b", o.spin || 0);   // oncoming cars
+  for (const o of obstacles) drawCar(o.x, o.y, o.color, o.spin || 0);   // other cars
   drawCar(CAR_X, car.y - CAR_H / 2, "#2ecc71");              // your car
   if (ambulance) {
     if (ambulance.warn > 0) drawWarning(ambulance.y);
