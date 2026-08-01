@@ -50,15 +50,15 @@ function siren() {
   const osc = actx.createOscillator();
   const gain = actx.createGain();
   osc.type = "sawtooth";
-  for (let i = 0; i < 8; i++) {
+  for (let i = 0; i < 11; i++) {
     osc.frequency.setValueAtTime(i % 2 ? 880 : 660, t + i * 0.18);
   }
   gain.gain.setValueAtTime(0.18, t);
-  gain.gain.setValueAtTime(0.18, t + 1.4);
-  gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.55);
+  gain.gain.setValueAtTime(0.18, t + 1.85);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 2.0);
   osc.connect(gain).connect(actx.destination);
   osc.start(t);
-  osc.stop(t + 1.6);
+  osc.stop(t + 2.05);
 }
 const crashSound = () => beep(150, 0.4, "sawtooth", 0.22);
 function honk() {
@@ -128,15 +128,19 @@ function update() {
 
   // ambulance zooms by from behind every once in a while
   if (!ambulance && Math.random() < 0.0013) {
-    ambulance = { x: -AMBU_W - 40, y: 40 + Math.random() * (H - AMBU_H - 80) };
-    siren();
+    ambulance = { x: -AMBU_W - 40, y: 40 + Math.random() * (H - AMBU_H - 80), warn: 120 };
+    siren();  // siren wails ~2s before it arrives
   }
   if (ambulance) {
-    ambulance.x += AMBU_SPEED;
-    const hitX = CAR_X + CAR_W > ambulance.x && CAR_X < ambulance.x + AMBU_W;
-    const hitY = car.y + CAR_H / 2 > ambulance.y && car.y - CAR_H / 2 < ambulance.y + AMBU_H;
-    if (hitX && hitY) { crash(); return; }
-    if (ambulance.x > W + 60) ambulance = null;
+    if (ambulance.warn > 0) {
+      ambulance.warn--;              // warning phase: not on the road yet
+    } else {
+      ambulance.x += AMBU_SPEED;
+      const hitX = CAR_X + CAR_W > ambulance.x && CAR_X < ambulance.x + AMBU_W;
+      const hitY = car.y + CAR_H / 2 > ambulance.y && car.y - CAR_H / 2 < ambulance.y + AMBU_H;
+      if (hitX && hitY) { crash(); return; }
+      if (ambulance.x > W + 60) ambulance = null;
+    }
   }
 
   if (up) car.y -= STEER;
@@ -190,7 +194,26 @@ function draw() {
 
   for (const o of obstacles) drawCar(o.x, o.y, "#e2483b");   // oncoming cars
   drawCar(CAR_X, car.y - CAR_H / 2, "#2ecc71");              // your car
-  if (ambulance) drawAmbulance(ambulance.x, ambulance.y);
+  if (ambulance) {
+    if (ambulance.warn > 0) drawWarning(ambulance.y);
+    else drawAmbulance(ambulance.x, ambulance.y);
+  }
+}
+
+function drawWarning(y) {
+  const cy = y + AMBU_H / 2;
+  const on = (frame % 12) < 6;
+  // flashing arrow at the left edge pointing right, in the ambulance's lane
+  ctx.fillStyle = on ? "#ff2d2d" : "#2d6bff";
+  ctx.beginPath();
+  ctx.moveTo(12, cy - 22);
+  ctx.lineTo(52, cy);
+  ctx.lineTo(12, cy + 22);
+  ctx.closePath();
+  ctx.fill();
+  ctx.font = "bold 28px system-ui, sans-serif";
+  ctx.fillStyle = "#fff";
+  ctx.fillText("🚑", 60, cy + 10);
 }
 
 function drawAmbulance(x, y) {
