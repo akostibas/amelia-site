@@ -24,6 +24,9 @@ const CAR_H = 40;
 const OB_W = 70;
 const OB_H = 44;
 const OB_SPACING = 340;   // gap between oncoming cars
+const AMBU_SPEED = 13;    // ambulance zoom speed (faster than traffic)
+const AMBU_W = 96;
+const AMBU_H = 48;
 
 // --- sound ---
 let actx = null;
@@ -41,9 +44,44 @@ function beep(freq, dur, type, peak) {
   osc.stop(t + dur + 0.02);
 }
 const pointSound = () => beep(660, 0.12, "triangle", 0.18);
+function siren() {
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  const t = actx.currentTime;
+  const osc = actx.createOscillator();
+  const gain = actx.createGain();
+  osc.type = "sawtooth";
+  for (let i = 0; i < 8; i++) {
+    osc.frequency.setValueAtTime(i % 2 ? 880 : 660, t + i * 0.18);
+  }
+  gain.gain.setValueAtTime(0.18, t);
+  gain.gain.setValueAtTime(0.18, t + 1.4);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + 1.55);
+  osc.connect(gain).connect(actx.destination);
+  osc.start(t);
+  osc.stop(t + 1.6);
+}
 const crashSound = () => beep(150, 0.4, "sawtooth", 0.22);
+function honk() {
+  // fun, loud two-tone car horn
+  if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
+  const t = actx.currentTime;
+  [440, 554].forEach((f) => {
+    const osc = actx.createOscillator();
+    const gain = actx.createGain();
+    osc.type = "sawtooth";
+    osc.frequency.value = f;
+    gain.gain.setValueAtTime(0.0001, t);
+    gain.gain.exponentialRampToValueAtTime(0.45, t + 0.03);
+    gain.gain.setValueAtTime(0.45, t + 0.5);
+    gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.62);
+    osc.connect(gain).connect(actx.destination);
+    osc.start(t);
+    osc.stop(t + 0.65);
+  });
+}
 
 let car, obstacles, score, state, roadOffset;
+let ambulance = null, frame = 0;
 let up = false, down = false;
 
 function reset() {
@@ -52,6 +90,7 @@ function reset() {
   score = 0;
   state = "ready";
   roadOffset = 0;
+  ambulance = null;
   scoreEl.textContent = "0";
   msgEl.textContent = "Up / Down to steer";
   msgEl.style.display = "block";
@@ -84,7 +123,21 @@ function press() {
 function update() {
   if (state !== "play") return;
 
+  frame++;
   roadOffset = (roadOffset + SCROLL) % 60;
+
+  // ambulance zooms by from behind every once in a while
+  if (!ambulance && Math.random() < 0.0013) {
+    ambulance = { x: -AMBU_W - 40, y: 40 + Math.random() * (H - AMBU_H - 80) };
+    siren();
+  }
+  if (ambulance) {
+    ambulance.x += AMBU_SPEED;
+    const hitX = CAR_X + CAR_W > ambulance.x && CAR_X < ambulance.x + AMBU_W;
+    const hitY = car.y + CAR_H / 2 > ambulance.y && car.y - CAR_H / 2 < ambulance.y + AMBU_H;
+    if (hitX && hitY) { crash(); return; }
+    if (ambulance.x > W + 60) ambulance = null;
+  }
 
   if (up) car.y -= STEER;
   if (down) car.y += STEER;
@@ -137,6 +190,33 @@ function draw() {
 
   for (const o of obstacles) drawCar(o.x, o.y, "#e2483b");   // oncoming cars
   drawCar(CAR_X, car.y - CAR_H / 2, "#2ecc71");              // your car
+  if (ambulance) drawAmbulance(ambulance.x, ambulance.y);
+}
+
+function drawAmbulance(x, y) {
+  // white body + red stripe + cross
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(x, y, AMBU_W, AMBU_H);
+  ctx.fillStyle = "#e2483b";
+  ctx.fillRect(x, y + AMBU_H / 2 - 4, AMBU_W, 8);
+  ctx.fillRect(x + AMBU_W * 0.62, y + AMBU_H / 2 - 12, 8, 24);
+  ctx.fillRect(x + AMBU_W * 0.62 - 8, y + AMBU_H / 2 - 4, 24, 8);
+  // windshield
+  ctx.fillStyle = "#cfefff";
+  ctx.fillRect(x + AMBU_W - 20, y + 6, 14, AMBU_H - 12);
+  // flashing roof lights (alternate red / blue)
+  const on = (frame % 12) < 6;
+  ctx.fillStyle = on ? "#ff2d2d" : "#7a7a7a";
+  ctx.fillRect(x + 14, y - 8, 16, 8);
+  ctx.fillStyle = on ? "#7a7a7a" : "#2d6bff";
+  ctx.fillRect(x + 36, y - 8, 16, 8);
+  // glow when lit
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = on ? "#ff2d2d" : "#2d6bff";
+  ctx.beginPath();
+  ctx.arc(x + (on ? 22 : 44), y - 4, 18, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha = 1;
 }
 
 function loop() {
@@ -147,6 +227,7 @@ function loop() {
 
 // --- two inputs: UP and DOWN (held) ---
 window.addEventListener("keydown", (e) => {
+  if (e.code === "Space") { e.preventDefault(); honk(); }
   if (e.code === "ArrowUp" || e.code === "KeyW") { e.preventDefault(); up = true; press(); }
   if (e.code === "ArrowDown" || e.code === "KeyS") { e.preventDefault(); down = true; press(); }
 });
