@@ -80,6 +80,23 @@ function honk() {
     osc.start(t);
     osc.stop(t + 0.65);
   });
+  scareNearbyCar();
+}
+
+// honking close behind a car makes it swerve out of the way
+function scareNearbyCar() {
+  if (state !== "play") return;
+  const CLOSE = 240;
+  let best = null, bestGap = Infinity;
+  for (const o of obstacles) {
+    if (o.hit || o.sy) continue;
+    const gap = o.x - (CAR_X + CAR_W);
+    const laneClose = Math.abs(o.y + OB_H / 2 - car.y) < 90;
+    if (gap > -OB_W && gap < CLOSE && laneClose && gap < bestGap) {
+      best = o; bestGap = gap;
+    }
+  }
+  if (best) best.sy = (Math.random() < 0.5 ? -1 : 1) * (5 + Math.random() * 3);
 }
 
 let car, obstacles, score, state, roadOffset;
@@ -169,7 +186,14 @@ function update() {
   // move cars: normal cars scroll left; knocked cars fly along their velocity
   for (const o of obstacles) {
     if (o.hit) { o.x += o.vx; o.y += o.vy; o.spin += o.dspin; }
-    else o.x -= (SCROLL - o.speed);   // they move forward, but slower than us
+    else {
+      o.x -= (SCROLL - o.speed);   // they move forward, but slower than us
+      if (o.sy) {                  // swerving after a honk
+        o.y = Math.max(30, Math.min(H - OB_H - 30, o.y + o.sy));
+        o.sy *= 0.92;
+        if (Math.abs(o.sy) < 0.3) o.sy = 0;
+      }
+    }
   }
   // spawn based on the rightmost normal (non-knocked) car
   let lastX = -Infinity;
