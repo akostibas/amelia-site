@@ -15,12 +15,34 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 RELOAD_SNIPPET = b"""
 <script>
 (function () {
+  // Soft live-reload: on change, swap the .scene subtree and re-fetch the
+  // stylesheet in place -- WITHOUT reloading the document. This keeps any
+  // running audio (and all other page JS state) alive across edits.
   let last = null;
+  async function softReload() {
+    try {
+      const res = await fetch('/?_=' + Date.now(), {cache: 'no-store'});
+      const html = await res.text();
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const fresh = doc.querySelector('.scene');
+      const current = document.querySelector('.scene');
+      if (fresh && current) {
+        current.replaceWith(fresh);
+      } else {
+        location.reload();   // structure we don't recognize; fall back
+        return;
+      }
+      document.querySelectorAll('link[rel=stylesheet]').forEach(function (l) {
+        const base = (l.getAttribute('href') || '').split('?')[0];
+        l.setAttribute('href', base + '?_=' + Date.now());
+      });
+    } catch (e) { /* transient; try again next tick */ }
+  }
   async function poll() {
     try {
       const r = await fetch('/__mtime__', {cache: 'no-store'});
       const v = await r.text();
-      if (last !== null && v !== last) { location.reload(); return; }
+      if (last !== null && v !== last) { await softReload(); }
       last = v;
     } catch (e) { /* server restarting; keep trying */ }
     setTimeout(poll, 400);
