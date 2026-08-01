@@ -61,6 +61,7 @@ function siren() {
   osc.stop(t + 2.05);
 }
 const crashSound = () => beep(150, 0.4, "sawtooth", 0.22);
+const boomSound = () => beep(90, 0.25, "square", 0.25);
 function honk() {
   // fun, loud two-tone car horn
   if (!actx) actx = new (window.AudioContext || window.webkitAudioContext)();
@@ -136,6 +137,20 @@ function update() {
       ambulance.warn--;              // warning phase: not on the road yet
     } else {
       ambulance.x += AMBU_SPEED;
+      // blow away any car the ambulance plows into
+      for (const o of obstacles) {
+        if (o.hit) continue;
+        const oxHit = ambulance.x + AMBU_W > o.x && ambulance.x < o.x + OB_W;
+        const oyHit = ambulance.y + AMBU_H > o.y && ambulance.y < o.y + OB_H;
+        if (oxHit && oyHit) {
+          o.hit = true;
+          o.vx = AMBU_SPEED + 5 + Math.random() * 4;
+          o.vy = (o.y < ambulance.y ? -1 : 1) * (6 + Math.random() * 6);
+          o.spin = 0;
+          o.dspin = (Math.random() - 0.5) * 0.6;
+          boomSound();
+        }
+      }
       const hitX = CAR_X + CAR_W > ambulance.x && CAR_X < ambulance.x + AMBU_W;
       const hitY = car.y + CAR_H / 2 > ambulance.y && car.y - CAR_H / 2 < ambulance.y + AMBU_H;
       if (hitX && hitY) { crash(); return; }
@@ -147,12 +162,21 @@ function update() {
   if (down) car.y += STEER;
   car.y = Math.max(CAR_H / 2, Math.min(H - CAR_H / 2, car.y));
 
-  for (const o of obstacles) o.x -= SCROLL;
-  const last = obstacles[obstacles.length - 1];
-  if (last && last.x < W - OB_SPACING) addObstacle(last.x + OB_SPACING);
-  if (obstacles.length && obstacles[0].x + OB_W < 0) obstacles.shift();
+  // move cars: normal cars scroll left; knocked cars fly along their velocity
+  for (const o of obstacles) {
+    if (o.hit) { o.x += o.vx; o.y += o.vy; o.spin += o.dspin; }
+    else o.x -= SCROLL;
+  }
+  // spawn based on the rightmost normal (non-knocked) car
+  let lastX = -Infinity;
+  for (const o of obstacles) if (!o.hit) lastX = Math.max(lastX, o.x);
+  if (lastX === -Infinity) addObstacle(W + 100);
+  else if (lastX < W - OB_SPACING) addObstacle(lastX + OB_SPACING);
+  // drop cars that have left the screen (any side)
+  obstacles = obstacles.filter((o) => o.x + OB_W > -60 && o.x < W + 200 && o.y > -160 && o.y < H + 160);
 
   for (const o of obstacles) {
+    if (o.hit) continue;  // flying cars don't score or hit the player
     if (!o.passed && o.x + OB_W < CAR_X) {
       o.passed = true;
       score++;
@@ -165,7 +189,13 @@ function update() {
   }
 }
 
-function drawCar(x, y, color) {
+function drawCar(x, y, color, angle) {
+  if (angle) {
+    ctx.save();
+    ctx.translate(x + CAR_W / 2, y + CAR_H / 2);
+    ctx.rotate(angle);
+    ctx.translate(-(x + CAR_W / 2), -(y + CAR_H / 2));
+  }
   ctx.fillStyle = color;
   ctx.fillRect(x, y, CAR_W, CAR_H);
   ctx.fillStyle = "#cfefff";
@@ -175,6 +205,7 @@ function drawCar(x, y, color) {
   ctx.fillRect(x + 8, y + CAR_H - 2, 14, 6);
   ctx.fillRect(x + CAR_W - 22, y - 4, 14, 6);
   ctx.fillRect(x + CAR_W - 22, y + CAR_H - 2, 14, 6);
+  if (angle) ctx.restore();
 }
 
 function draw() {
@@ -192,7 +223,7 @@ function draw() {
   ctx.fillRect(0, 0, W, 6);
   ctx.fillRect(0, H - 6, W, 6);
 
-  for (const o of obstacles) drawCar(o.x, o.y, "#e2483b");   // oncoming cars
+  for (const o of obstacles) drawCar(o.x, o.y, "#e2483b", o.spin || 0);   // oncoming cars
   drawCar(CAR_X, car.y - CAR_H / 2, "#2ecc71");              // your car
   if (ambulance) {
     if (ambulance.warn > 0) drawWarning(ambulance.y);
