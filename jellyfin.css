@@ -100,3 +100,13 @@ button[is="emby-playstatebutton"], button[is="emby-ratingbutton"] {
 
 /* During playback Jellyfin makes the page transparent so the video shows; don't paint the sky over it */
 .transparentDocument body, .transparentDocument .backgroundContainer { background: transparent !important; }
+
+/* Tapping anywhere on an episode row plays it: stretch the row's (invisible) play button over the whole row.
+   Buttons don't stretch from top/left/right/bottom alone, hence the explicit 100% size. */
+.listItem { position: relative !important; }
+.listItem .listItemImage { position: static !important; animation: none !important; opacity: 1 !important; }
+.listItem .listItemImageButton {
+  position: absolute !important; top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+  width: 100% !important; height: 100% !important; margin: 0 !important; transform: none !important;
+  opacity: 0; z-index: 2;
+}
