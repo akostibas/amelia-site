@@ -1,0 +1,99 @@
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@500;600&display=swap');
+/* Amelia's Jellyfin look, loaded by an @import line in her iPad's Jellyfin Custom CSS. Not part of the site. */
+
+/* Detail page clutter */
+#castCollapsible, #guestCastCollapsible, #similarCollapsible,
+#specialsCollapsible, #additionalPartsCollapsible, #musicVideosCollapsible,
+#scenesCollapsible, #lyricsSection, #seriesScheduleSection,
+.itemMiscInfo, .itemGenres, .detailsGroupItem, .itemExternalLinks,
+.itemTags, .overview, .overview-container, .trackSelections, .itemDetailsGroup,
+.infoWrapper .tagline, .nameContainer .parentName {
+  display: none !important;
+}
+
+/* Keep only play/resume */
+.mainDetailButtons .detailButton:not(.btnPlay):not(.btnResume) {
+  display: none !important;
+}
+
+/* Big play button */
+.mainDetailButtons .btnPlay,
+.mainDetailButtons .btnResume {
+  font-size: 2.5em !important;
+  padding: 0.6em 1.4em !important;
+  border-radius: 1em !important;
+  background: #e5007e !important;
+  color: #fff !important;
+}
+.mainDetailButtons .btnPlay .detailButton-icon,
+.mainDetailButtons .btnResume .detailButton-icon {
+  font-size: 2em !important;
+}
+
+/* Bigger posters everywhere */
+.overflowPortraitCard, .portraitCard { width: 40vw !important; }
+@media (min-width: 700px) {
+  .overflowPortraitCard, .portraitCard { width: 25vw !important; }
+}
+
+/* Theme borrowed from amelia.kostibas.com: night sky, rainbow, pink pills */
+body, .cardText, .sectionTitle, .itemName, h1, h2, h3 {
+  font-family: 'Fredoka', system-ui, sans-serif !important;
+}
+.backgroundContainer:not(.withBackdrop), body {
+  background:
+    radial-gradient(2px 2px at 12% 18%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 78% 9%, #ffd93b 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 45% 30%, #fff 50%, transparent 51%),
+    radial-gradient(2px 2px at 90% 40%, #ff9ecb 50%, transparent 51%),
+    radial-gradient(1.5px 1.5px at 25% 60%, #fff 50%, transparent 51%),
+    linear-gradient(#05010f 0%, #0d0730 50%, #1a1240 100%) fixed !important;
+}
+.skinHeader {
+  border-bottom: 5px solid transparent;
+  border-image: linear-gradient(90deg, #ff3b3b, #ff9f1c, #ffd93b, #7ed957, #3bb0ff, #9b5cff) 1;
+}
+.mainDetailButtons .btnPlay, .mainDetailButtons .btnResume {
+  background: #ff5ea8 !important;
+  border-radius: 999px !important;
+  box-shadow: 0 0 24px #ff5ea8aa;
+}
+.cardScalable, .cardImageContainer { border-radius: 1.2em !important; }
+.cardBox:hover .cardScalable { transform: scale(1.04); transition: transform .2s; }
+.cardText { font-size: 1.15em !important; color: #fff !important; }
+.cardText-secondary { color: #ffd93b !important; }
+
+/* Episode rows and poster cards: drop info / played / favorite / more */
+.listItem .listItemButton, .cardOverlayButton-br,
+.cardOverlayButton[data-action="menu"], .listItemIndicators,
+button[is="emby-playstatebutton"], button[is="emby-ratingbutton"] {
+  display: none !important;
+}
+
+/* Episode rows: big title, no runtime/rating/end time */
+.listItem .listItemMediaInfo, .listItem .listItem-overview { display: none !important; }
+.listItem .listItemBodyText:not(.secondary) {
+  font-family: 'Fredoka', system-ui, sans-serif !important;
+  font-size: 1.6em !important;
+  color: #ffd93b !important;
+}
+
+/* Season tiles: rainbow border by position */
+#listChildrenCollapsible .card .cardImageContainer { box-shadow: inset 0 0 0 5px var(--season, #ff5ea8); }
+#listChildrenCollapsible .card:nth-child(6n+1) { --season: #ff3b3b; }
+#listChildrenCollapsible .card:nth-child(6n+2) { --season: #ff9f1c; }
+#listChildrenCollapsible .card:nth-child(6n+3) { --season: #ffd93b; }
+#listChildrenCollapsible .card:nth-child(6n+4) { --season: #7ed957; }
+#listChildrenCollapsible .card:nth-child(6n+5) { --season: #3bb0ff; }
+#listChildrenCollapsible .card:nth-child(6n)   { --season: #9b5cff; }
+/* Season tiles use episode frames (16:9), so make them landscape */
+#listChildrenCollapsible .cardPadder { padding-bottom: 56.25% !important; }
+#listChildrenCollapsible .portraitCard { width: 30vw !important; }
+
+/* Show/movie pages paint a solid gray panel over the sky; tint it night purple instead */
+.detailPageWrapperContainer { background: rgba(13, 7, 48, 0.88) !important; }
+.detailPagePrimaryContainer { background: rgba(26, 18, 64, 0.92) !important; }
+.detailRibbon { background: rgba(26, 18, 64, 0.85) !important; }
+
+/* Library grid: no ⋮ menus on posters, no year ranges */
+.btnCardOptions, .cardText-secondary { display: none !important; }
