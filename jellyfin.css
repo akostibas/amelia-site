@@ -97,3 +97,6 @@ button[is="emby-playstatebutton"], button[is="emby-ratingbutton"] {
 
 /* Library grid: no ⋮ menus on posters, no year ranges */
 .btnCardOptions, .cardText-secondary { display: none !important; }
+
+/* During playback Jellyfin makes the page transparent so the video shows; don't paint the sky over it */
+.transparentDocument body, .transparentDocument .backgroundContainer { background: transparent !important; }
