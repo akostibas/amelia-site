@@ -110,3 +110,6 @@ button[is="emby-playstatebutton"], button[is="emby-ratingbutton"] {
   width: 100% !important; height: 100% !important; margin: 0 !important; transform: none !important;
   opacity: 0; z-index: 2;
 }
+
+/* Show page "Next Up" repeats what the big play button does (it starts at the next unwatched episode) */
+.nextUpSection { display: none !important; }
